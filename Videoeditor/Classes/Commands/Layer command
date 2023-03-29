@@ -1,0 +1,84 @@
+import SwiftUI
+
+import AVKit
+
+class YiAddLayerCommand: NSObject, YiVideoEditorCommandProtocol {
+
+    weak var videoData: YiVideoEditorData?
+
+    var layer: CALayer
+
+    
+
+    init(videoData: YiVideoEditorData, layer: CALayer) {
+
+        self.videoData = videoData
+
+        self.layer = layer
+
+        super.init()
+
+    }
+
+    
+
+    func execute() {
+
+        guard let videoData = videoData,
+
+              let asset = videoData.asset else {
+
+            return
+
+        }
+
+        
+
+        let videoSize = videoData.videoSize
+
+        
+
+        let playerItem = AVPlayerItem(asset: asset)
+
+        let player = AVPlayer(playerItem: playerItem)
+
+        let playerLayer = AVPlayerLayer(player: player)
+
+        playerLayer.frame = CGRect(x: 0, y: 0, width: videoSize.width, height: videoSize.height)
+
+        
+
+        let parentLayer = CALayer()
+
+        parentLayer.frame = CGRect(x: 0, y: 0, width: videoSize.width, height: videoSize.height)
+
+        parentLayer.addSublayer(playerLayer)
+
+        parentLayer.addSublayer(layer)
+
+        
+
+        let animationTool = AVVideoCompositionCoreAnimationTool(postProcessingAsVideoLayer: playerLayer, in: parentLayer)
+
+        let videoComposition = AVMutableVideoComposition()
+
+        videoComposition.frameDuration = CMTime(value: 1, timescale: 30)
+
+        videoComposition.renderSize = videoSize
+
+        videoComposition.animationTool = animationTool
+
+        
+
+        player.currentItem?.videoComposition = videoComposition
+
+        
+
+        let playerView = VideoPlayer(player: player)
+
+        // Use `playerView` in SwiftUI to display the video with the added layer
+
+    }
+
+}
+
