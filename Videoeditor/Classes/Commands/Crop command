@@ -1,0 +1,62 @@
+import Foundation
+
+import CoreImage
+
+import GPUImage
+
+class YiCropCommand: NSObject, YiVideoEditorCommandProtocol {
+
+    weak var videoData: YiVideoEditorData?
+
+    var cropFrame: CGRect
+
+    
+
+    init(videoData: YiVideoEditorData, cropFrame: CGRect) {
+
+        self.videoData = videoData
+
+        self.cropFrame = cropFrame
+
+        super.init()
+
+    }
+
+    func execute() {
+
+        guard let composition = videoData?.composition, let videoCompositionTrack = videoData?.videoCompositionTrack else {
+
+            return
+
+        }
+
+        
+
+        // Create a filter to crop the video
+
+        let cropFilter = GPUImageCropFilter(cropRegion: cropFrame)
+
+        
+
+        // Apply the filter to the video track
+
+        let filteredVideoComposition = AVVideoComposition(asset: composition) { (request) in
+
+            let source = request.sourceImage.clampedToExtent()
+
+            cropFilter.render(image: source, to: request.destinationImage, at: request.time)
+
+        }
+
+        
+
+        // Update the video data
+
+        videoData?.videoComposition = filteredVideoComposition
+
+        videoData?.videoSize = cropFrame.size
+
+    }
+
+}
+
