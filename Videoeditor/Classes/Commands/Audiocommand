@@ -1,0 +1,44 @@
+import AVFoundation
+
+class YiAddAudioCommand: NSObject, YiVideoEditorCommandProtocol {
+    weak var videoData: YiVideoEditorData?
+    var audioAsset: AVAsset
+    var startingAt: CGFloat
+    var trackDuration: CGFloat
+
+    init(videoData: YiVideoEditorData, audioAsset: AVAsset, startingAt: CGFloat?, trackDuration: CGFloat?) {
+        self.videoData = videoData
+        self.audioAsset = audioAsset
+        self.startingAt = startingAt ?? 0
+        self.trackDuration = trackDuration ?? CGFloat.greatestFiniteMagnitude
+        super.init()
+    }
+
+    func execute() {
+        let audioTrack = audioAsset.tracks(withMediaType: .audio).first
+
+        guard let videoComposition = videoData?.composition,
+            let audioCompositionTrack = videoComposition.addMutableTrack(withMediaType: .audio, preferredTrackID: kCMPersistentTrackID_Invalid),
+            let videoCompositionTrack = videoData?.videoCompositionTrack,
+            let videoDuration = videoData?.videoCompositionTrack?.timeRange.duration else {
+            return
+        }
+
+        let startTime = CMTime(seconds: Double(startingAt), preferredTimescale: videoDuration.timescale)
+        let trackDurationTime = CMTime(seconds: Double(trackDuration), preferredTimescale: videoDuration.timescale)
+
+        if CMTimeCompare(videoDuration, startTime) == -1 {
+            return
+        }
+
+        let availableTrackDuration = CMTimeSubtract(videoDuration, startTime)
+        let duration = CMTimeMinimum(availableTrackDuration, audioTrack?.timeRange.duration ?? .zero, trackDurationTime)
+
+        let timeRange = CMTimeRange(start: .zero, duration: duration)
+        do {
+            try audioCompositionTrack.insertTimeRange(timeRange, of: audioTrack!, at: startTime)
+        } catch {
+            print(error.localizedDescription)
+        }
+    }
+}
