@@ -1,0 +1,89 @@
+import SwiftUI
+
+import AVKit
+
+struct VideoView: UIViewControllerRepresentable {
+
+    typealias UIViewControllerType = AVPlayerViewController
+
+    
+
+    let videoUrl: URL
+
+    
+
+    func makeUIViewController(context: Context) -> AVPlayerViewController {
+
+        let controller = AVPlayerViewController()
+
+        let player = AVPlayer(url: videoUrl)
+
+        controller.player = player
+
+        controller.player?.actionAtItemEnd = .none
+
+        NotificationCenter.default.addObserver(forName: NSNotification.Name.AVPlayerItemDidPlayToEndTime, object: player.currentItem, queue: nil) { notification in
+
+            player.seek(to: CMTime.zero)
+
+        }
+
+        return controller
+
+    }
+
+    
+
+    func updateUIViewController(_ uiViewController: AVPlayerViewController, context: Context) {
+
+        uiViewController.player?.play()
+
+    }
+
+}
+
+struct VideoViewWrapper: View {
+
+    let videoUrl: URL
+
+    
+
+    var body: some View {
+
+        NavigationView {
+
+            VideoView(videoUrl: videoUrl)
+
+                .navigationBarItems(trailing:
+
+                                        Button(action: { dismiss() }) {
+
+                                            Image(systemName: "xmark")
+
+                                                .padding()
+
+                                                .background(Color.white.opacity(0.5))
+
+                                                .clipShape(Circle())
+
+                                        })
+
+        }
+
+    }
+
+    
+
+    func dismiss() {
+
+        UIApplication.shared.windows.first?.rootViewController?.dismiss(animated: true, completion: nil)
+
+    }
+
+}
+let videoView = VideoViewWrapper(videoUrl: videoUrl)
+
+present(UIHostingController(rootView: videoView), animated: true, completion: nil)
+
+
+
