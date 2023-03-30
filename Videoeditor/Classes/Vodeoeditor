@@ -1,0 +1,179 @@
+import Foundation
+
+import VideoToolbox
+
+public enum YiVideoEditorRotateDegree: Int {
+
+    case rotateDegree90 = 0
+
+    case rotateDegree180 = 1
+
+    case rotateDegree270 = 2
+
+}
+
+open class YiVideoEditor: NSObject {
+
+    let videoURL: URL
+
+    
+
+    public init(videoURL: URL) {
+
+        self.videoURL = videoURL
+
+        super.init()
+
+    }
+
+    
+
+    public func rotate(rotateDegree: YiVideoEditorRotateDegree, completion: @escaping (URL?, Error?)->Void) {
+
+        let asset = AVURLAsset(url: videoURL)
+
+        let outputURL = URL(fileURLWithPath: NSTemporaryDirectory() + "rotatedVideo.mov")
+
+        let exporter = AVAssetExportSession(asset: asset, presetName: AVAssetExportPresetHighestQuality)!
+
+        exporter.outputURL = outputURL
+
+        exporter.outputFileType = .mov
+
+        
+
+        let transformer = AVMutableVideoCompositionLayerInstruction(assetTrack: asset.tracks(withMediaType: .video)[0])
+
+        let instruction = AVMutableVideoCompositionInstruction()
+
+        var transform: CGAffineTransform
+
+        
+
+        switch rotateDegree {
+
+        case .rotateDegree90:
+
+            transform = CGAffineTransform(rotationAngle: CGFloat(Double.pi/2))
+
+            transformer.setTransform(transform, at: .zero)
+
+            instruction.timeRange = CMTimeRangeMake(start: .zero, duration: asset.duration)
+
+            instruction.layerInstructions = [transformer]
+
+        case .rotateDegree180:
+
+            transform = CGAffineTransform(rotationAngle: CGFloat(Double.pi))
+
+            transformer.setTransform(transform, at: .zero)
+
+            instruction.timeRange = CMTimeRangeMake(start: .zero, duration: asset.duration)
+
+            instruction.layerInstructions = [transformer]
+
+        case .rotateDegree270:
+
+            transform = CGAffineTransform(rotationAngle: CGFloat(Double.pi/2 * 3))
+
+            transformer.setTransform(transform, at: .zero)
+
+            instruction.timeRange = CMTimeRangeMake(start: .zero, duration: asset.duration)
+
+            instruction.layerInstructions = [transformer]
+
+        }
+
+        
+
+        let videoComposition = AVMutableVideoComposition()
+
+        videoComposition.renderSize = CGSize(width: transformer.track.naturalSize.height, height: transformer.track.naturalSize.width)
+
+        videoComposition.frameDuration = CMTimeMake(value: 1, timescale: 30)
+
+        videoComposition.instructions = [instruction]
+
+        
+
+        exporter.videoComposition = videoComposition
+
+        
+
+        exporter.exportAsynchronously {
+
+            if exporter.status == .completed {
+
+                completion(outputURL, nil)
+
+            } else {
+
+                completion(nil, exporter.error)
+
+            }
+
+        }
+
+    }
+
+    
+
+    public func crop(cropFrame: CGRect, completion: @escaping (URL?, Error?)->Void) {
+
+        let asset = AVURLAsset(url: videoURL)
+
+        let outputURL = URL(fileURLWithPath: NSTemporaryDirectory() + "croppedVideo.mov")
+
+        let exporter = AVAssetExportSession(asset: asset, presetName: AVAssetExportPresetHighestQuality)!
+
+        exporter.outputURL = outputURL
+
+        exporter.outputFileType = .mov
+
+        
+
+        let transformer = AVMutableVideoCompositionLayerInstruction(assetTrack: asset.tracks(withMediaType: .video)[0])
+
+        let instruction = AVMutableVideoCompositionInstruction()
+
+        let transform = CGAffineTransform(scaleX: transformer.track.naturalSize.width/cropFrame.width, y: transformer.track.naturalSize.height/cropFrame.height)
+
+        transformer.setTransform(transform, at: .zero)
+
+        transformer.setOpacity(0, at: cropFrame.size)
+
+        instruction.timeRange = CMTimeRangeMake(start: .zero, duration: asset.duration)
+
+        instruction.layerInstructions = [transformer]
+
+        
+
+        let videoComposition =AVMutableVideoComposition()
+
+videoComposition.renderSize = cropFrame.size
+
+videoComposition.frameDuration = CMTimeMake(value: 1, timescale: 30)
+
+videoComposition.instructions = [instruction]
+    exporter.videoComposition = videoComposition
+
+    
+
+    exporter.exportAsynchronously {
+
+        if exporter.status == .completed {
+
+            completion(outputURL, nil)
+
+        } else {
+
+            completion(nil, exporter.error)
+
+        }
+
+    }
+
+}
+
+
+
