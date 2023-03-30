@@ -1,0 +1,38 @@
+import SwiftyJSON
+
+var json = JSON()
+
+json["info"]["version"].int = 1
+
+json["info"]["author"].string = "xcode"
+
+var imagesArray = JSON()
+
+imagesArray.arrayObject = [
+
+    ["idiom": "iphone", "size": "20x20", "scale": "2x"],
+
+    ["idiom": "iphone", "size": "20x20", "scale": "3x"],
+
+    ["idiom": "iphone", "size": "29x29", "scale": "2x"],
+
+    ["idiom": "iphone", "size": "29x29", "scale": "3x"],
+
+    ["idiom": "iphone", "size": "40x40", "scale": "2x"],
+
+    ["idiom": "iphone", "size": "40x40", "scale": "3x"],
+
+    ["idiom": "iphone", "size": "60x60", "scale": "2x"],
+
+    ["idiom": "iphone", "size": "60x60", "scale": "3x"],
+
+    ["idiom": "ios-marketing", "size": "1024x1024", "scale": "1x"]
+
+]
+
+json["images"] = imagesArray
+
+let jsonString = json.rawString() ?? ""
+
+print(jsonString)
+
