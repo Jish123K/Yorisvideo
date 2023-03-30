@@ -1,0 +1,116 @@
+import UIKit
+
+import AVFoundation
+
+import AVKit
+
+class HomeViewController: UIViewController {
+
+    
+
+    // MARK: - Properties
+
+    
+
+    var player: AVPlayer?
+
+    var playerViewController: AVPlayerViewController?
+
+    
+
+    // MARK: - Lifecycle
+
+    
+
+    override func viewDidLoad() {
+
+        super.viewDidLoad()
+
+        
+
+        // Do any additional setup after loading the view.
+
+        view.backgroundColor = .white
+
+        
+
+        // Hide navigation bar
+
+        navigationController?.isNavigationBarHidden = true
+
+        
+
+        // Configure player view controller
+
+        playerViewController = AVPlayerViewController()
+
+        guard let playerViewController = playerViewController else { return }
+
+        playerViewController.view.frame = view.bounds
+
+        playerViewController.view.autoresizingMask = [.flexibleWidth, .flexibleHeight]
+
+        playerViewController.showsPlaybackControls = true
+
+        view.addSubview(playerViewController.view)
+
+        
+
+        // Load video
+
+        guard let videoUrl = Bundle.main.url(forResource: "video", withExtension: "mp4") else { return }
+
+        let playerItem = AVPlayerItem(url: videoUrl)
+
+        player = AVPlayer(playerItem: playerItem)
+
+        playerViewController.player = player
+
+    }
+
+    
+
+    // MARK: - Actions
+
+    
+
+    @IBAction func playButtonTapped(_ sender: Any) {
+
+        player?.play()
+
+    }
+
+    
+
+    @IBAction func pauseButtonTapped(_ sender: Any) {
+
+        player?.pause()
+
+    }
+
+    
+
+    @IBAction func stopButtonTapped(_ sender: Any) {
+
+        player?.pause()
+
+        player?.seek(to: CMTime.zero)
+
+    }
+
+    
+
+    // MARK: - Deinitialization
+
+    
+
+    deinit {
+
+        player = nil
+
+        playerViewController = nil
+
+    }
+
+}
+
