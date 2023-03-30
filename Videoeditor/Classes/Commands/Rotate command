@@ -1,0 +1,128 @@
+import Foundation
+
+import GPUImage
+
+class YiRotateCommand: YiVideoEditorCommandProtocol {
+
+    
+
+    weak var videoData: YiVideoEditorData?
+
+    
+
+    init(videoData: YiVideoEditorData) {
+
+        self.videoData = videoData
+
+    }
+
+    
+
+    func execute() {
+
+        guard let videoData = videoData else {
+
+            return
+
+        }
+
+        
+
+        // create a new filter with rotation transform
+
+        let rotationFilter = GPUImageTransformFilter()
+
+        rotationFilter.affineTransform = CGAffineTransform(rotationAngle: .pi/2)
+
+        
+
+        // apply the filter to the video
+
+        let videoURL = videoData.videoAsset?.url ?? URL(fileURLWithPath: "")
+
+        let movieFile = GPUImageMovie(url: videoURL)
+
+        movieFile.runBenchmark = true
+
+        
+
+        let videoSize = videoData.videoComposition?.renderSize ?? CGSize.zero
+
+        let rotatedSize = CGSize(width: videoSize.height, height: videoSize.width)
+
+        
+
+        let movieView = GPUImageView(frame: CGRect(origin: .zero, size: rotatedSize))
+
+        movieFile.addTarget(rotationFilter)
+
+        rotationFilter.addTarget(movieView)
+
+        
+
+        // create a new video composition with the rotated video
+
+        let composition = GPUImageMovieComposition(
+
+            andVideoComposition: videoData.videoComposition!,
+
+            andVideoSize: videoSize,
+
+            andAudioMix: videoData.audioMix
+
+        )
+
+        
+
+        composition.addInput(movieFile)
+
+        composition.addTarget(movieView)
+
+        
+
+        // export the rotated video
+
+        let outputPath = NSTemporaryDirectory() + "rotated_video.mp4"
+
+        let exportSession = GPUImageMovieWriter(
+
+            movieURL: URL(fileURLWithPath: outputPath),
+
+            size: rotatedSize
+
+        )
+
+        exportSession.shouldPassthroughAudio = true
+
+        
+
+        composition.addTarget(exportSession)
+
+        movieFile.startProcessing()
+
+        exportSession.startRecording()
+
+        
+
+        // wait for the export to finish
+
+        movieFile.waitUntilCompletion()
+
+        exportSession.finishRecording()
+
+        
+
+        // update the video data with the rotated video
+
+        let rotatedAsset = AVAsset(url: URL(fileURLWithPath: outputPath))
+
+        videoData.videoAsset = rotatedAsset
+
+        videoData.videoComposition?.renderSize = rotatedSize
+
+        videoData.videoSize = rotatedSize
+
+    }
+
+}
+
